@@ -1,12 +1,5 @@
 package es.us.cluster
 
-import java.io.{File, PrintWriter}
-
-import org.apache.spark.SparkContext
-import org.apache.spark.ml.clustering.KMeans
-import org.apache.spark.mllib.linalg.Vectors
-import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{DataFrame, SQLContext}
 
 /**
   * This object contains two methods that calculates the optimal number for
@@ -17,7 +10,7 @@ import org.apache.spark.sql.{DataFrame, SQLContext}
   * @since v1.0 Dev
   */
 object ClusterIndex {
-
+/*
   /**
     * @usecase Create a file with Silhoutte index results applying K-means
     * @param sc             SparkContext defined
@@ -290,5 +283,5 @@ object ClusterIndex {
     return if (s.isEmpty) 0 else s.toDouble
   }
 
-
+*/
 }

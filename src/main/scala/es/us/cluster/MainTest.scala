@@ -1,8 +1,5 @@
 package es.us.cluster
 
-import es.us.empleo.Utils
-import org.apache.spark.mllib.clustering.{BisectingKMeans, KMeansModel}
-import org.apache.spark.mllib.linalg.Vectors
 import org.apache.spark.{SparkConf, SparkContext}
 
 
@@ -15,7 +12,7 @@ import org.apache.spark.{SparkConf, SparkContext}
   */
 object MainTest {
   def main(args: Array[String]) {
-
+/*
     val conf = new SparkConf()
       .setAppName("Spark Cluster")
       .setMaster("local[*]")
@@ -74,6 +71,7 @@ object MainTest {
     dataClustered.coalesce(1).saveAsTextFile(modelName + ".csv")
 
     sc.stop()
+    */
   }
 
   //Return 0 if the data is empty, else return data parsed to Double

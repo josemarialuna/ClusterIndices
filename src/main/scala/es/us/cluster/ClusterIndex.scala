@@ -1,5 +1,11 @@
 package es.us.cluster
 
+import java.io.{File, PrintWriter}
+
+import org.apache.spark.SparkContext
+import org.apache.spark.mllib.clustering.{BisectingKMeans, KMeans}
+import org.apache.spark.mllib.linalg.Vectors
+import org.apache.spark.rdd.RDD
 
 /**
   * This object contains two methods that calculates the optimal number for
@@ -10,7 +16,7 @@ package es.us.cluster
   * @since v1.0 Dev
   */
 object ClusterIndex {
-/*
+
   /**
     * @usecase Create a file with Silhoutte index results applying K-means
     * @param sc             SparkContext defined
@@ -23,35 +29,57 @@ object ClusterIndex {
     *         Fourth column is the result.
     * @example silhoutte(sc, parsedData, 20, 100)
     */
-  def silhoutteKMeans(sc: SparkContext, parsedData: DataFrame, maxNumClusters: Int, numIterations: Int): Unit = {
+  def silhoutteKMeans(sc: SparkContext, parsedData: RDD[org.apache.spark.mllib.linalg.Vector], maxNumClusters: Int, numIterations: Int): Unit = {
     var i = 1
     var s = ""
 
     //evaluates number of clusters
     for (i <- 2 to maxNumClusters) {
 
-      // Trains a k-means model.
-      val kmeans = new KMeans()
-        .setK(i)
-        .setSeed(1L)
-        .setMaxIter(numIterations)
-      val model = kmeans.fit(parsedData)
-
-      // Evaluate clustering by computing Within Set Sum of Squared Errors.
-      val intraMean = model.computeCost(parsedData) / parsedData.count()
+      val clusters = KMeans.train(parsedData, i, numIterations)
+      val intraMean = clusters.computeCost(parsedData) / parsedData.count()
 
       //Global Center
-      val sqlContext = new SQLContext(sc)
-      import sqlContext.implicits._
-
-      val centroides = sc.parallelize(model.clusterCenters).map(_.toArray).map(x => (x.apply(0), x.apply(1))).toDF()
-
-      val clusterCentroides = new KMeans()
-        .setK(1)
-        .setSeed(1L)
-        .setMaxIter(numIterations)
-        .fit(centroides)
+      val centroides = sc.parallelize(clusters.clusterCenters)
+      val clusterCentroides = KMeans.train(centroides, 1, numIterations)
       val interMean = clusterCentroides.computeCost(centroides) / centroides.count()
+
+      //Get Silhoutte index: (intercluster - intracluster)/Max(intercluster,intracluster)
+      val silhoutte = (interMean - intraMean) / (if (interMean > intraMean) interMean else intraMean)
+      s += i + ";" + interMean + " ; " + intraMean + " ; " + silhoutte + "\n"
+    }
+
+
+    //Save number of cluster distances results
+    val pw = new PrintWriter(new File("SilhoutteKM-" + Utils.whatTimeIsIt() + "-" + numIterations + "it-" + ".csv"))
+    try pw.write(s) finally pw.close()
+
+  }
+
+  def silhoutteKMeansInter(sc: SparkContext, parsedData: RDD[org.apache.spark.mllib.linalg.Vector], maxNumClusters: Int, numIterations: Int): Unit = {
+    var i = 1
+    var s = ""
+
+    //evaluates number of clusters
+    for (i <- 2 to maxNumClusters) {
+
+      val clusters = KMeans.train(parsedData, i, numIterations)
+      val intraMean = clusters.computeCost(parsedData) / parsedData.count()
+
+      //Global Center
+      val centroides = sc.parallelize(clusters.clusterCenters).cache()
+      val clusterCentroides = KMeans.train(centroides, 1, numIterations)
+      //val interMean = clusterCentroides.computeCost(centroides) / centroides.count()
+      var interMean = 0.0
+      var aux = sc.accumulator(0.0)
+      var j = 0
+      for (j <- 0 to clusters.clusterCenters.length - 1) {
+        val bdCenter = sc.broadcast(clusters.clusterCenters(j))
+        aux.value = centroides.map(a => Vectors.sqdist(bdCenter.value, a)).max()
+        if (aux.value > interMean)
+          interMean = aux.value
+      }
+
 
       //Get Silhoutte index: (intercluster - intracluster)/Max(intercluster,intracluster)
       val silhoutte = (interMean - intraMean) / (if (interMean > intraMean) interMean else intraMean)
@@ -77,27 +105,18 @@ object ClusterIndex {
     *         Fourth column is the result.
     * @example dunn(sc, parsedData, 20, 100)
     */
-  def dunnKMeans(sc: SparkContext, parsedData: DataFrame, maxNumClusters: Int, numIterations: Int): Unit = {
+  def dunnKMeans(sc: SparkContext, parsedData: RDD[org.apache.spark.mllib.linalg.Vector], maxNumClusters: Int, numIterations: Int): Unit = {
     var i = 1
     var s = ""
     //evaluates number of clusters
     //Results: 6 clusters is the first minimum
     for (i <- 2 to maxNumClusters) {
 
-      // Trains a k-means model.
-      val clusters = new KMeans()
-        .setK(i)
-        .setSeed(1L)
-        .setMaxIter(numIterations)
-        .fit(parsedData)
+      val clusters = KMeans.train(parsedData, i, numIterations)
 
       //Global Centroid
       val centroides = sc.parallelize(clusters.clusterCenters)
-      val clusterCentroides = new KMeans()
-        .setK(1)
-        .setSeed(1L)
-        .setMaxIter(numIterations)
-        .fit(parsedData)
+      val clusterCentroides = KMeans.train(parsedData, 1, numIterations)
 
       //Min distance from centroids to global centroid
       val minA = centroides.map { x =>
@@ -106,7 +125,7 @@ object ClusterIndex {
 
       //Max distance from points to its centroid
       val maxB = parsedData.map { x =>
-        Vectors.sqdist(x, clusters.clusterCenters(clusters.pred.predict(x)))
+        Vectors.sqdist(x, clusters.clusterCenters(clusters.predict(x)))
       }.max
 
       //Get Dunn index: Mín(Dist centroides al centroide)/Max(dist punto al centroide)
@@ -283,5 +302,5 @@ object ClusterIndex {
     return if (s.isEmpty) 0 else s.toDouble
   }
 
-*/
+
 }

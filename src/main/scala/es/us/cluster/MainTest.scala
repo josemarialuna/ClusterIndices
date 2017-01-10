@@ -1,5 +1,6 @@
 package es.us.cluster
 
+import org.apache.spark.mllib.clustering.BisectingKMeans
 import org.apache.spark.{SparkConf, SparkContext}
 
 
@@ -12,14 +13,14 @@ import org.apache.spark.{SparkConf, SparkContext}
   */
 object MainTest {
   def main(args: Array[String]) {
-/*
+
     val conf = new SparkConf()
       .setAppName("Spark Cluster")
       .setMaster("local[*]")
 
     val sc = new SparkContext(conf)
 
-    val fileOriginal = "c:\\datasets\\randomsetN4.csv"
+    val fileOriginal = "C:\\Users\\Josem\\Desktop\\datasets\\a1.txt"
 
     var origen: String = fileOriginal
     var destino: String = Utils.whatTimeIsIt()
@@ -39,12 +40,12 @@ object MainTest {
     // Load and parse the data
     val dataRDDSplitted = datos.map(x => x.split(";"))
     //It skips the first line
-    val dataRDDSkipped = dataRDDSplitted.mapPartitionsWithIndex { (idx, iter) => if (idx == 0) iter.drop(1) else iter }
+    //val dataRDDSkipped = dataRDDSplitted.mapPartitionsWithIndex { (idx, iter) => if (idx == 0) iter.drop(1) else iter }
 
     //val parsedData = dataRDDSkipped.map(x => Vectors.dense(Array(x(0).toDouble, x(1).toDouble, x(2).toDouble, x(3).toDouble, x(4).toDouble, x(5).toDouble, x(6).toDouble, x(7).toDouble, x(8).toDouble, x(9).toDouble, x(10).toDouble, x(11).toDouble, x(12).toDouble, x(13).toDouble, x(14).toDouble, x(15).toDouble, x(16).toDouble, x(17).toDouble, x(18).toDouble, x(19).toDouble, x(20).toDouble, x(21).toDouble, x(22).toDouble, x(23).toDouble, x(24).toDouble)))
     //val parsedData = dataRDDSkipped.map(x => Vectors.dense(Array(x(0).toDouble, x(1).toDouble, x(2).toDouble, x(3).toDouble, x(4).toDouble, x(5).toDouble, x(6).toDouble, x(7).toDouble, x(8).toDouble, x(9).toDouble, x(10).toDouble, x(11).toDouble, x(12).toDouble, x(13).toDouble, x(14).toDouble, x(15).toDouble, x(16).toDouble, x(17).toDouble, x(18).toDouble, x(19).toDouble, x(20).toDouble, x(21).toDouble, x(22).toDouble, x(23).toDouble, x(24).toDouble,x(25).toDouble,x(26).toDouble,x(27).toDouble,x(28).toDouble,x(29).toDouble,x(30).toDouble, x(31).toDouble, x(32).toDouble, x(33).toDouble, x(34).toDouble, x(35).toDouble, x(36).toDouble, x(37).toDouble, x(38).toDouble, x(39).toDouble, x(40).toDouble,x(41).toDouble, x(42).toDouble, x(43).toDouble, x(44).toDouble, x(45).toDouble, x(46).toDouble, x(47).toDouble, x(48).toDouble, x(49).toDouble, x(50).toDouble,x(51).toDouble, x(52).toDouble, x(53).toDouble, x(54).toDouble, x(55).toDouble, x(56).toDouble, x(57).toDouble, x(58).toDouble, x(59).toDouble, x(60).toDouble,x(61).toDouble, x(62).toDouble, x(63).toDouble, x(64).toDouble, x(65).toDouble, x(66).toDouble, x(67).toDouble, x(68).toDouble))).cache()
     //val parsedData = dataRDDSkipped.map(x => Vectors.dense(Array(x(0).toDouble, x(1).toDouble, x(2).toDouble, x(3).toDouble, x(4).toDouble, x(5).toDouble, x(6).toDouble))).cache()
-    val parsedData = dataRDDSkipped.map(x => Vectors.dense(Array(x(0).toDouble, x(1).toDouble, x(2).toDouble, x(3).toDouble))).cache()
+    //val parsedData = dataRDDSkipped.map(x => Vectors.dense(Array(x(0).toDouble, x(1).toDouble, x(2).toDouble, x(3).toDouble))).cache()
     //val parsedData = dataRDDSkipped.map(x => Vectors.dense(Array(x(0).toDouble, x(1).toDouble, x(2).toDouble, x(3).toDouble, x(4).toDouble, x(5).toDouble, x(6).toDouble, x(7).toDouble, x(8).toDouble, x(9).toDouble, x(10).toDouble, x(11).toDouble, x(12).toDouble, x(13).toDouble))).cache()
     //val parsedData = dataRDDSkipped.map(x => Vectors.dense(Array(x(0).toDouble, x(1).toDouble, x(2).toDouble, x(3).toDouble, x(4).toDouble, x(5).toDouble, x(6).toDouble, x(7).toDouble, x(8).toDouble, x(9).toDouble, x(10).toDouble))).cache()
 
@@ -58,20 +59,18 @@ object MainTest {
     /** *****END KMEANS ********/
 
 
-
+/*
     /** *****BISECTINGKMEANS ********/
     val clustersBKM = new BisectingKMeans().setK(4).setMaxIterations(100).run(parsedData)
 
     sc.parallelize(clustersBKM.clusterCenters).coalesce(1, shuffle = true).saveAsTextFile(modelName + "-BKMcentroids")
 
     /** *****END BISECTINGKMEANS ********/
-    //It returns idCliente, cluster
-    val dataClustered = parsedData.map(x => (clustersBKM.predict(x), 1)).reduceByKey((a, b) => a + b)
 
-    dataClustered.coalesce(1).saveAsTextFile(modelName + ".csv")
+    */
 
     sc.stop()
-    */
+
   }
 
   //Return 0 if the data is empty, else return data parsed to Double

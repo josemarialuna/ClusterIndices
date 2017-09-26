@@ -22,6 +22,10 @@ object Utils {
     return new SimpleDateFormat("yyyyMMdd").format(Calendar.getInstance().getTime())
   }
 
+  def giveMeTime(): Long = {
+    return Calendar.getInstance().getTime().getTime
+  }
+
   //Return 0 if the data is empty, else return data parsed to Double
   def dataToDouble(s: String): Double = {
     return if (s.isEmpty) 0 else s.toDouble

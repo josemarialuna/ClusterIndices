@@ -1,6 +1,6 @@
 # Validity Indices for Clustering Techniques in Big Data
 
-This package contains the code for executing four clustering validity indices in Spark. The package include BD-Silhouette BD-Dunn that were proposed in [1]. Davies-Bouldin and WSSSE indices are also calculated in the same method.
+This package contains the code for executing four clustering validity indices in Spark. The package includes BD-Silhouette BD-Dunn that were proposed in [1]. Davies-Bouldin and WSSSE indices are also calculated in the same method.
 
 ## Getting Started
 The package include the following Scala files:

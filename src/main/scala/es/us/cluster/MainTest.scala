@@ -1,7 +1,5 @@
 package es.us.cluster
 
-import java.io.{File, PrintWriter}
-
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.mllib.linalg.Vectors
 import org.apache.spark.{SparkConf, SparkContext}
@@ -28,26 +26,27 @@ object MainTest {
 
     //var path = "C:\\datasets\\GeneratedMatrix\\"
     //var fileName = "matrizRelativa"
-    var path = "C:\\datasets\\art2\\005\\"
-    var fileName = "C5-D20-I10000.csv"
+    var path = "C:\\Users\\Josem\\CloudStation\\Edificios procesados por separado\\Indexados\\"
+    var fileName = "EDIF_12"
 
     var origen: String = path + fileName
-    var destino: String = Utils.whatTimeIsIt()
-    var minNumCluster = 2
-    var maxNumCluster = 10
-    var numIterations = 100
+    var destino: String = path
+    var minNumCluster = 20
+    var maxNumCluster = 30
+    var numIterations = 500
     var numPartitions = 16
 
     if (args.size > 2) {
       path = args(0).toString
       fileName = args(1).toString
+      origen = path
+
       destino = args(2)
       minNumCluster = args(3).toInt
       maxNumCluster = args(4).toInt
       numIterations = args(5).toInt
       numPartitions = args(6).toInt
 
-      origen = path + fileName
     }
 
     val data = sc.textFile(if (args.length > 2) args(0) else origen, numPartitions)
@@ -58,7 +57,7 @@ object MainTest {
     //val dataRDDSkipped = dataRDDSplitted.mapPartitionsWithIndex { (idx, iter) => if (idx == 0) iter.drop(1) else iter }
 
     val dataRDD = data
-      .map(s => s.split(",")
+      .map(s => s.split("\t")
         .map(_.toDouble))
       .keyBy(_.apply(0))
       .cache()
@@ -99,7 +98,11 @@ object MainTest {
 
 
     val stringRdd = sc.parallelize(resultado)
-    stringRdd.repartition(1).saveAsTextFile(destino + "Results-" + fileName + "-" + Utils.whatTimeIsIt() + ".csv")
+
+    stringRdd.repartition(1)
+      .mapValues(_.toString().replace(",", "\t").replace("(", "").replace(")", ""))
+      .map(x => x._1.toInt + "\t" + x._2)
+      .saveAsTextFile(destino + "Results-" + fileName + "-" + Utils.whatTimeIsIt())
 
     sc.stop()
 

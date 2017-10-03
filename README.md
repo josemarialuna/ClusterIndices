@@ -3,11 +3,11 @@
 This package contains the code for executing four clustering validity indices in Spark. The package includes BD-Silhouette BD-Dunn that were proposed in [1]. Davies-Bouldin and WSSSE indices are also calculated in the same method.
 
 ## Getting Started
-The package include the following Scala files:
+The package includes the following Scala files:
 * ClusterIndex: Scala Object that contains the methods that return the values of the indices.
 * MainTestKMeans: Scala main class ready to test the validity indices using [KMeans method from Mllib](https://spark.apache.org/docs/1.6.2/mllib-clustering.html#k-means).
 * MainTestBKM: Scala main class ready to test the validity indices using [Bisecting KMeans method from Mllib](https://spark.apache.org/docs/1.6.2/mllib-clustering.html#bisecting-k-means).
-* Utils: Scala object that includes some methods for parsing.
+* Utils: Scala object that includes some helpful methods.
 * C5-D20-I1000.csv: Example dataset that contains 5 clusters with 1000 points each and 20 features (columns).
 
 ### Prerequisites

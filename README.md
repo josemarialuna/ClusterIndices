@@ -71,8 +71,14 @@ For the example dataset:
 
 ![Graphs results for example dataset](https://github.com/josemarialuna/ClusterIndices/blob/master/result_graph.PNG)
 
-## Authors
+## Contributors
 
-* **José María Luna** - *Initial work* - [José María Luna](https://github.com/josemarialuna)
+* José María Luna-Romera - (main contributor and maintainer).
+* Jorge García-Gutiérrez
+* María Martínez-Ballesteros
+* José C. Riquelme Santos
 
+## References
+
+[1] TBA
 

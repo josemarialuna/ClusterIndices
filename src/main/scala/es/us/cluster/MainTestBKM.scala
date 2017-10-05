@@ -24,28 +24,24 @@ object MainTestBKM {
 
     val sc = new SparkContext(conf)
 
-    //var path = "C:\\datasets\\GeneratedMatrix\\"
-    //var fileName = "matrizRelativa"
-    var path = "C:\\Users\\Josem\\CloudStation\\Edificios procesados por separado\\Indexados\\"
-    var fileName = "EDIF_12"
+    var path = ""
+    var fileName = "C5-D20-I1000.csv"
+
 
     var origen: String = path + fileName
-    var destino: String = path
+    var destino: String = path + fileName
     var minNumCluster = 2
     var maxNumCluster = 10
     var numIterations = 500
     var numPartitions = 16
 
     if (args.size > 2) {
-      path = args(0).toString
-      fileName = args(1).toString
-      origen = path + fileName
-
-      destino = args(2)
-      minNumCluster = args(3).toInt
-      maxNumCluster = args(4).toInt
-      numIterations = args(5).toInt
-      numPartitions = args(6).toInt
+      origen = args(0).toString
+      destino = args(1)
+      minNumCluster = args(2).toInt
+      maxNumCluster = args(3).toInt
+      numIterations = args(4).toInt
+      numPartitions = args(5).toInt
 
     }
 
@@ -57,7 +53,7 @@ object MainTestBKM {
     //val dataRDDSkipped = dataRDDSplitted.mapPartitionsWithIndex { (idx, iter) => if (idx == 0) iter.drop(1) else iter }
 
     val dataRDD = data
-      .map(s => s.split("\t")
+      .map(s => s.split(",")
         .map(_.toDouble))
       .keyBy(_.apply(0))
       .cache()
@@ -102,7 +98,7 @@ object MainTestBKM {
     stringRdd.repartition(1)
       .mapValues(_.toString().replace(",", "\t").replace("(", "").replace(")", ""))
       .map(x => x._1.toInt + "\t" + x._2)
-      .saveAsTextFile(destino + "Results-" + fileName + "-" + Utils.whatTimeIsIt())
+      .saveAsTextFile(destino + "-Results-" + Utils.whatTimeIsIt())
 
     sc.stop()
 

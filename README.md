@@ -51,7 +51,7 @@ val conf = new SparkConf()
 
 ## Results
 
-By default, results are saved in the same a folder than the dataset. Results are named "[DatasetName-Results-[DATE]" that contains part-00000 file. The result follow the next scheme: k, Silhouette value, Dunn value, Davies-Bouldin value, WSSSE value, and the elapsed time of each index in miliseconds. 
+By default, results are saved in the same a folder than the dataset. Results are in a folder named "DatasetName-Results-DATE" that contains a part-00000 file. The result follow the next scheme: k, Silhouette value, Dunn value, Davies-Bouldin value, WSSSE value, and the elapsed time of each index in miliseconds. 
 
 In the case of our example dataset, a resultset could be:
 ```

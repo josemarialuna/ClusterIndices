@@ -4,7 +4,6 @@ import org.apache.log4j.{Level, Logger}
 import org.apache.spark.mllib.linalg.Vectors
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.functions.monotonically_increasing_id
-import org.apache.spark.storage.StorageLevel
 
 /**
   * Main object for testing clustering methods using Linkage in SPARK MLLIB
@@ -13,6 +12,7 @@ import org.apache.spark.storage.StorageLevel
   * @version 1.0
   * @since v1.0 Dev
   */
+
 object MainTestLinkage {
   def main(args: Array[String]) {
 
@@ -27,33 +27,44 @@ object MainTestLinkage {
     import spark.implicits._
 
     var path = ""
-//    var fileName = "C5-D20-I1000.csv"
-    var fileName = "DataBase500p"
+    var fileName = "C5-D20-I1000.csv"
+//    var fileName = "DataBase500pC7"
 //    var fileName = "B:\\Datasets\\irisData.txt"
 
     var origen: String = path + fileName
     var destino: String = path + fileName
 
-    var numPoints = 500
+    /* Set up the number of points to the data, the minimum number of points per centroid
+    and the strategy distance to run linkage algorithm */
+    var numPoints = 5000
     var clusterFilterNumber = 1
-    val strategyDistance = "avg"
+    var strategyDistance = "avg"
 
-    var typDataSet = 1
+    /* Set up the type of the data, its id column, its class column ("_cX" format, since 0 until length - 1)
+    and the method to calculate the distance between points */
+    var typDataSet = 0
     var idIndex = "_c0"
-    var classIndex = "_c0"
+    var classIndex = "_c4"
     var distanceMethod = "Euclidean"
 
+    //Set up the minimum and maximum number of cluster and the number of partitions
     var minNumCluster = 2
     var maxNumCluster = 10
     var numPartitions = 16
 
     if (args.size > 2) {
       origen = args(0).toString
-      destino = args(1)
-      minNumCluster = args(2).toInt
-      maxNumCluster = args(3).toInt
-      numPartitions = args(4).toInt
-
+      destino = args(1).toString
+      numPoints = args(2).toInt
+      clusterFilterNumber = args(3).toInt
+      strategyDistance = args(4).toString
+      typDataSet = args(5).toInt
+      idIndex = args(6).toString
+      classIndex = args(7).toString
+      distanceMethod = args(8).toString
+      minNumCluster = args(9).toInt
+      maxNumCluster = args(10).toInt
+      numPartitions = args(11).toInt
     }
 
     //Load data from csv
@@ -76,9 +87,10 @@ object MainTestLinkage {
         dataDF.drop(idIndex,classIndex).map(_.toSeq.asInstanceOf[Seq[Double]])
     }
 
+    //Save the coordinates of all points in a RDD[Vector]
     val parsedData = dataDFFiltered.rdd.map(s => Vectors.dense(s.toArray))
 
-    //We automatically generate an index for each row
+    //Generate automatically an index for each row
     val dataAux = dataDFFiltered.withColumn("index", monotonically_increasing_id()+1)
 
     //Save dataAux for futures uses
@@ -87,6 +99,7 @@ object MainTestLinkage {
       .sortByKey()
       .map(_.toString().replace("(", "").replace("))", ")").replace("List", "(").replace(",(", ";("))
 
+    //Save the id and the coordinates of all points in a RDD[(Int,Vector)]
     val coordinatesRDD = coordinates
       .map(s => s.split(";"))
       .map(row => (row(0).toInt, Vectors.dense(row(1).replace("(", "").replace(")", "").split(",").map(_.toDouble))))
@@ -95,20 +108,22 @@ object MainTestLinkage {
     val newColumnsNames = Seq("valueAux", "indexAux")
     val dataAuxRenamed = dataAux.toDF(newColumnsNames: _*)
 
+    //Calculate the distance between all points
     val distances = dataAux.crossJoin(dataAuxRenamed)
       .filter(r => r.getLong(1) < r.getLong(3))
       .map{r =>
-        //Depending on the method we choose to perform the distance, the value of the same will change
+        //Depending on the method chosen one to perform the distance, the value of the same will change
         val dist = distanceMethod match {
 
           case "Euclidean" =>
             distEuclidean(r.getSeq[Double](0), r.getSeq[Double](2))
         }
 
-        //We return the result saving: (point 1, point 2, the distance that separates both)
+        //Return the result saving: (point 1, point 2, the distance between both)
         (r.getLong(1), r.getLong(3), dist)
       }
 
+    //Save the distances between all points in a RDD[Distance]
     val distancesRDD = distances.rdd.map(_.toString().replace("(", "").replace(")", ""))
       .map(s => s.split(',').map(_.toFloat))
       .map { case x =>
@@ -126,16 +141,17 @@ object MainTestLinkage {
     println("Loading file..")
 
 
+    //Run the Linkage algorithm with the parameters choose
     val result = ClusterIndex.getIndicesLinkage(parsedData, coordinatesRDD, distancesRDD, numPoints, clusterFilterNumber,
       strategyDistance, minNumCluster, maxNumCluster).sortByKey()
 
-    val resultado = result.map { case k =>
+    //Save the result in a RDD[String]
+    val stringRDD = result.map { case k =>
       (k._1, k._2)
     }
 
-    val stringRdd = resultado
-
-    stringRdd.repartition(1)
+    //Save the result in a external file
+    stringRDD.coalesce(1)
       .mapValues(_.toString().replace(",", "\t").replace("(", "").replace(")", ""))
       .map(x => x._1.toInt + "\t" + x._2)
       .saveAsTextFile(destino + "-Results-" + Utils.whatTimeIsIt())
@@ -149,7 +165,7 @@ object MainTestLinkage {
     return if (s.isEmpty) 0 else s.toDouble
   }
 
-  //Method for calculating de Euclidean distante between two points
+  //Calculate de Euclidean distance between two points
   def distEuclidean(v1: Seq[Double], v2: Seq[Double]): Double = {
     require(v1.size == v2.size, s"Vector dimensions do not match: Dim(v1)=${v1.size} and Dim(v2)" +
       s"=${v2.size}.")

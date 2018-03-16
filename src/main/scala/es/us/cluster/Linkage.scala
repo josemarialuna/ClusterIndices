@@ -134,7 +134,7 @@ class Linkage(
 
     //Show the duration to run the algorithm
     val duration = (System.nanoTime - start) / 1e9d
-    logInfo("Time create centroids: " + duration)
+    logInfo("Time for linkage clustering: " + duration)
 
     //Return a new LinkageModel based into the model
     (new LinkageModel(sc.parallelize(linkageModel.toSeq), sc.emptyRDD[Vector].collect()))

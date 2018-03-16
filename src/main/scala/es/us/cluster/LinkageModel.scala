@@ -4,6 +4,7 @@ import org.apache.spark.internal.Logging
 import org.apache.spark.rdd.RDD
 import org.apache.spark.mllib.linalg.{Vector, Vectors}
 import org.apache.spark.mllib.stat.{MultivariateStatisticalSummary, Statistics}
+import org.apache.spark.sql.SparkSession
 
 /**
   * Created by Jose David on 15/01/2018.
@@ -210,23 +211,39 @@ class LinkageModel(_clusters: RDD[(Long, (Int, Int))], var _clusterCenters: Arra
     val start = System.nanoTime
 
     val sc = resultPoints.sparkContext
-    var auxVectors = sc.emptyRDD[Vector]
+
+    val spark = SparkSession.builder()
+      .appName("Spark Cluster")
+      .master("local[*]")
+      .getOrCreate()
+
+    import spark.implicits._
+
 
     var rest = Array[Vector]()
+    var a = 0
 
-    for (iter <- resultPoints.map(row => row._2).distinct().collect()){
+    for (iter <- resultPoints.toDF().map(row => row.getInt(1)).distinct().collect()){
 
-      auxVectors = sc.emptyRDD[Vector]
+      var auxVectors = sc.emptyRDD[Vector]
 
-      val points = resultPoints.filter(id => id._2 == iter).map(value => value._1)
+      val points = resultPoints.filter(id => id._2 == iter).map(value => value._1).toDF().cache()
 
       if (points.count() >= kMin){
 
         for(point <- points.collect()){
-          auxVectors.cache()
-          auxVectors = auxVectors.union(coordinates.filter(id => id._1 == point).map(value => value._2))
+          a = a + 1
+
+          //Every two hundred iterations we make a checkpoint so that the memory does not overflow
+          if(a % 400 == 0){
+            auxVectors.checkpoint()
+            auxVectors.count()
+          }
+
+          auxVectors = auxVectors.union(coordinates.filter(id => id._1 == point.getInt(0)).map(value => value._2))
         }
-        auxVectors.unpersist()
+
+        points.unpersist()
       }
 
       val summary: MultivariateStatisticalSummary = Statistics.colStats(auxVectors)
@@ -236,7 +253,7 @@ class LinkageModel(_clusters: RDD[(Long, (Int, Int))], var _clusterCenters: Arra
 
     //Show the duration to create the centroids
     val duration = (System.nanoTime - start) / 1e9d
-    logInfo("Time for linkage clustering: " + duration)
+    logInfo("Time for create centroids: " + duration)
 
     rest
 

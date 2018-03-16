@@ -1,7 +1,8 @@
 package es.us.cluster
 
+import org.apache.spark.internal.Logging
 import org.apache.spark.mllib.clustering.{BisectingKMeans, KMeans}
-import org.apache.spark.mllib.linalg.{Vectors,Vector}
+import org.apache.spark.mllib.linalg.{Vector, Vectors}
 import org.apache.spark.rdd.RDD
 
 /**
@@ -12,7 +13,7 @@ import org.apache.spark.rdd.RDD
   * @version 1.0
   * @since v1.0 Dev
   */
-object ClusterIndex {
+object ClusterIndex extends Logging {
 
 
   //Return 0 if the data is empty, else return data parsed to Double
@@ -252,6 +253,8 @@ object ClusterIndex {
 
     for (k <- minClusters to maxClusters) {
 
+      val start = System.nanoTime
+
       val numClusters = k
 
       val resultPoints = clusters.createClusters(numPoints, numClusters, totalPoints)
@@ -342,6 +345,10 @@ object ClusterIndex {
       println("\tTime Davies-Bouldin: " + elapsedTimeDavies)
       println("\tTime WSSSE: " + elapsedTimeW)
       println("\n")
+
+      //Show the duration to run the algorithm with eack K
+      val duration = (System.nanoTime - start) / 1e9d
+      logInfo(s"Time for iteration $k: " + duration)
 
       modelResult += k -> (silhoutte, dunn, bouldin, wssse, elapsedTimeSil, elapsedTime, elapsedTimeDavies, elapsedTimeW)
 

@@ -1,4 +1,4 @@
-package es.us.cluster
+package es.us.linkage
 
 /**
   * Created by Josem on 13/12/2016.

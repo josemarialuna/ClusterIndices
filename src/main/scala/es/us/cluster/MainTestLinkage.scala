@@ -1,5 +1,6 @@
 package es.us.cluster
 
+import es.us.linkage.Distance
 import org.apache.log4j.{Level, Logger}
 import org.apache.spark.mllib.linalg.Vectors
 import org.apache.spark.sql.SparkSession

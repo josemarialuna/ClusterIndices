@@ -1,10 +1,11 @@
-package es.us.cluster
+package es.us.linkage
 
+import es.us.cluster.Utils
 import org.apache.spark.internal.Logging
-import org.apache.spark.sql.functions.min
 import org.apache.spark.mllib.linalg.Vector
 import org.apache.spark.rdd.RDD
-import org.apache.spark.sql.{DataFrame, Row, SparkSession}
+import org.apache.spark.sql.DataFrame
+import org.apache.spark.sql.functions.min
 import org.apache.spark.storage.StorageLevel
 
 /**

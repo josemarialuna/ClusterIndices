@@ -1,5 +1,6 @@
 package es.us.cluster
 
+import es.us.linkage.{Distance, Linkage}
 import org.apache.spark.internal.Logging
 import org.apache.spark.mllib.clustering.{BisectingKMeans, KMeans}
 import org.apache.spark.mllib.linalg.{Vector, Vectors}

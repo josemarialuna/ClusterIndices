@@ -1,6 +1,4 @@
-package es.us.cluster
-
-import org.apache.spark.rdd.RDD
+package es.us.linkage
 
 /**
   * Created by Josem on 15/11/2016.

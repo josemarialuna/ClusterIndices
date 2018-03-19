@@ -84,8 +84,8 @@ object MainTestKMeans {
       println("Elapsed Time:")
       println("\tTime Silhouette: " + indices._5)
       println("\tTime Dunn: " + indices._6)
-      println("\tTime Davies-Bouldin: " + indices._3)
-      println("\tTime WSSSE: " + indices._4)
+      println("\tTime Davies-Bouldin: " + indices._7)
+      println("\tTime WSSSE: " + indices._8)
       println("\n")
 
       (i, indices)

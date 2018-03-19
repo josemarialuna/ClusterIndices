@@ -14,7 +14,7 @@ import org.apache.spark.sql.functions.monotonically_increasing_id
   */
 
 object MainTestLinkage {
-  def main(args: Array[String]) {
+  def main(args: Array[String]){
 
     Logger.getLogger("org").setLevel(Level.OFF)
     Logger.getLogger("akka").setLevel(Level.OFF)
@@ -27,12 +27,13 @@ object MainTestLinkage {
     import spark.implicits._
 
     var path = ""
-    var fileName = "C5-D20-I1000.csv"
+    var fileName = ""
+//    var fileName = "C5-D20-I1000.csv"
 //    var fileName = "DataBase500pC7"
 //    var fileName = "B:\\Datasets\\irisData.txt"
 
     var origen: String = path + fileName
-    var destino: String = path + fileName
+    var destino: String = path
 
     /* Set up the number of points to the data, the minimum number of points per centroid
     and the strategy distance to run linkage algorithm */
@@ -75,7 +76,7 @@ object MainTestLinkage {
       .csv(origen)
 
     //Filtering DataFrame
-    val dataDFFiltered = typDataSet match{
+    val dataDFFiltered = typDataSet match {
       //It is not necessary to remove any column
       case 0 =>
         dataDF.map(_.toSeq.asInstanceOf[Seq[Double]])
@@ -160,12 +161,13 @@ object MainTestLinkage {
 
   }
 
-  //Return 0 if the data is empty, else return data parsed to Double
-  def dataToDouble(s: String): Double = {
-    return if (s.isEmpty) 0 else s.toDouble
-  }
-
-  //Calculate de Euclidean distance between two points
+  /**
+    * Calculate the Euclidena distance between tow points
+    * @param v1    First Vector in Sequence to Double
+    * @param v2 Second Vector in Sequence to Double
+    * @return Return the Euclidena distance between tow points
+    * @example distEuclidean(v1, v2)
+    */
   def distEuclidean(v1: Seq[Double], v2: Seq[Double]): Double = {
     require(v1.size == v2.size, s"Vector dimensions do not match: Dim(v1)=${v1.size} and Dim(v2)" +
       s"=${v2.size}.")
@@ -180,4 +182,5 @@ object MainTestLinkage {
     }
     math.sqrt(squaredDistance)
   }
+
 }

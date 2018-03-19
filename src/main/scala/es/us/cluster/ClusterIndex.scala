@@ -6,13 +6,14 @@ import org.apache.spark.mllib.linalg.{Vector, Vectors}
 import org.apache.spark.rdd.RDD
 
 /**
-  * This object contains two methods that calculates the optimal number for
-  * clustering using Kmeans or Bisecting KMeans in SPARK MLLIB
+  * This object contains three methods that calculates the optimal number for
+  * clustering using Kmeans, Bisecting KMeans or Linkage in SPARK MLLIB
   *
-  * @author José María Luna
+  * @author José María Luna and José David Martín
   * @version 1.0
   * @since v1.0 Dev
   */
+
 object ClusterIndex extends Logging {
 
 
@@ -23,7 +24,7 @@ object ClusterIndex extends Logging {
 
 
   /**
-    * @usecase Return Silhouette, Dunn, Davies-Bouldin and WSSSE validity clustering indices and its time after using KMeans from Mllib
+    * Return Silhouette, Dunn, Davies-Bouldin and WSSSE validity clustering indices and its time after using KMeans from Mllib
     * @param parsedData    RDD with parsed data ready to cluster. Its values are set in Vector from mllib
     * @param numClusters   Set the number of clusters to apply
     * @param numIterations Set the number of iterations that Kmeans does
@@ -120,7 +121,7 @@ object ClusterIndex extends Logging {
   }
 
   /**
-    * @usecase Return Silhouette, Dunn, Davies-Bouldin and WSSSE validity clustering indices and its time after using Bisecting KMeans from Mllib
+    * Return Silhouette, Dunn, Davies-Bouldin and WSSSE validity clustering indices and its time after using Bisecting KMeans from Mllib
     * @param parsedData    RDD with parsed data ready to cluster. Its values are set in Vector from mllib
     * @param numClusters   Set the number of clusters to apply
     * @param numIterations Set the number of iterations that Kmeans does
@@ -222,10 +223,17 @@ object ClusterIndex extends Logging {
   }
 
   /**
-    * @usecase Return Silhouette, Dunn, Davies-Bouldin and WSSSE validity clustering indices and its time after using Bisecting KMeans from Mllib
+    * Return Silhouette, Dunn, Davies-Bouldin and WSSSE validity clustering indices and its time after using Linkage
     * @param parsedData    RDD with parsed data ready to cluster. Its values are set in Vector from mllib
-    * @return A tuple composed by the Silhouette, Dunn, Davies-Bouldin and WSSSE and its corresponding time
-    * @example getIndicesBKM(parsedData, 2, 500)
+    * @param coordinates RDD with the values of each point and its id. The format is (Int, Vector)
+    * @param distances RDD with the distances between all points. Its values are Distances class instances
+    * @param numPoints The total number of points to the data
+    * @param clusterFilterNumber A Int number to filter the minimum number of points in each centroids
+    * @param strategyDistance Strategy to run Linkage algorithm in String (min, max or avg)
+    * @param minClusters Set the minimum number of clusters
+    * @param maxClusters Set the maximum number of clusters
+    * @return A RDD composed by each iteration and the Silhouette, Dunn, Davies-Bouldin and WSSSE and its corresponding time
+    * @example getIndicesLinkage(parsedData, coordinates, distances, 150, 1, "avg", 2, 10)
     */
   def getIndicesLinkage(parsedData: RDD[org.apache.spark.mllib.linalg.Vector], coordinates: RDD[(Int,Vector)], distances: RDD[Distance],
                         numPoints: Int, clusterFilterNumber: Int, strategyDistance: String, minClusters: Int, maxClusters: Int):
@@ -234,18 +242,22 @@ object ClusterIndex extends Logging {
     var s = ""
     val sc = parsedData.sparkContext
 
+    //Create a Map to save the result model
     var modelResult = scala.collection.mutable.Map[Int, (Double, Double, Double, Double, Long, Long, Long, Long)]()
 
-    sc.setCheckpointDir("B:\\checkpoints")
+    //Set up the checkpoint directory
+    sc.setCheckpointDir("checkpoints")
 
+    //Initialize the number of clusters with the minimum number of clusters
     var numberClusters = minClusters
 
     println("Number of points: " + numPoints)
 
-    //min,max,avg
+    //Create a Linkage object with the number of clusters and the strategy distance choose (min,max,avg)
     val linkage = new Linkage(numberClusters, strategyDistance)
     println("New Linkage with strategy: " + strategyDistance)
 
+    //Run the Linkage algorithm and create the clusters variable
     var clusters = linkage.runAlgorithm(distances, numPoints)
 
     //Initialize an RDD from 1 to the number of points in our database
@@ -255,13 +267,13 @@ object ClusterIndex extends Logging {
 
       val start = System.nanoTime
 
+      //For each iteration the number of clusters is equal to the K iteration
       val numClusters = k
 
+      //In function of the number of clusters the centroids will chance
       val resultPoints = clusters.createClusters(numPoints, numClusters, totalPoints)
       val centroids = clusters.inicializeCenters(coordinates, numClusters, numPoints, clusterFilterNumber, resultPoints)
       clusters.setClusterCenters(centroids)
-
-      ///////////////////////////////////////////////////////////////////////////
 
       //Global Center
       val centroides = sc.parallelize(clusters.clusterCenters)
@@ -350,6 +362,7 @@ object ClusterIndex extends Logging {
       val duration = (System.nanoTime - start) / 1e9d
       logInfo(s"Time for iteration $k: " + duration)
 
+      //Save in the model the results of each iteration
       modelResult += k -> (silhoutte, dunn, bouldin, wssse, elapsedTimeSil, elapsedTime, elapsedTimeDavies, elapsedTimeW)
 
     }

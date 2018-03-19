@@ -8,7 +8,9 @@ import org.apache.spark.sql.{DataFrame, Row, SparkSession}
 import org.apache.spark.storage.StorageLevel
 
 /**
-  * Created by Jose David on 15/01/2018.
+  * @author José María Luna and José David Martín
+  * @version 1.0
+  * @since v1.0 Dev
   */
 
 class Linkage(
@@ -34,6 +36,13 @@ class Linkage(
     def compare(a: Distance, b: Distance) = a.getDist compare b.getDist
   }
 
+  /**
+    * Return the Linkage model to given distance data
+    * @param distanceMatrix    RDD to the distances between all points to given data
+    * @param numPoints The number of points into given data
+    * @return A Linkage model to given data
+    * @example runAlgorithm(distanceMatrix, 150)
+    */
   def runAlgorithm(distanceMatrix: RDD[Distance], numPoints: Int): LinkageModel = {
 
     val start = System.nanoTime
@@ -52,18 +61,13 @@ class Linkage(
 
     for (a <- 0 until (numPoints - numClusters)) {
 
-//      println("Finding minimum:")
       val clustersRes = matrix.min()(DistOrdering)
-
-//      println(s"New minimum: $clustersRes")
 
       //Save in variables the cluster and points we find in this iteration and we add them to the model
       val point1 = clustersRes.getIdW1
       val point2 = clustersRes.getIdW2
       cont.add(1)
       val newIndex = cont.value.toLong
-
-//      println("New Cluster: " + newIndex + ":" + point1 + "-" + point2)
 
       //The new cluster is saved in the result model
       linkageModel += newIndex -> (point1, point2)
@@ -141,7 +145,14 @@ class Linkage(
 
   }
 
-  def runAlgorithmWithResult(distanceMatrix: RDD[Distance], numPoints: Int): (LinkageModel,RDD[(Int,Int)]) = {
+  /**
+    * Return the Linkage model to given distance data and all points with its cluster number
+    * @param distanceMatrix    RDD to the distances between all points to given data
+    * @param numPoints The number of points into given data
+    * @return A Linkage model to given data and RDD with (Int, Int) [point and cluster number]
+    * @example runAlgorithmWithResult(distanceMatrix, 150)
+    */
+  def runAlgorithmWithResult(distanceMatrix: RDD[Distance], numPoints: Int): (LinkageModel, RDD[(Int,Int)]) = {
 
     //Save in a variable the matrix of distances, the number of partitions and the sparkContext for future uses
     var matrix = distanceMatrix
@@ -266,6 +277,14 @@ class Linkage(
 
   }
 
+  /**
+    * Save the result of Linkage algorithm into a external file with the dendogram format to representation with Python library
+    * @param distanceMatrix    RDD to the distances between all points to given data
+    * @param numPoints The number of points into given data
+    * @param numClusters The number of clusters
+    * @return Nothing
+    * @example runAlgorithmDendrogram(distanceMatrix, 150, 5)
+    */
   def runAlgorithmDendrogram(distanceMatrix: RDD[Distance], numPoints: Int, numClusters: Int) = {
 
     //Save in a variable the matrix of distances, the number of partitions and the sparkContext for future uses
@@ -398,6 +417,14 @@ class Linkage(
 
   }
 
+  /**
+    * Return the Linkage model to given distance data but using DataFrames
+    * @param distanceMatrix    RDD to the distances between all points to given data
+    * @param numPoints The number of points into given data
+    * @param numPartitions The number of partitions
+    * @return A Linkage model to given data
+    * @example runAlgorithmDF(distanceMatrix, 150, 16)
+    */
   def runAlgorithmDF(distanceMatrix: DataFrame, numPoints: Int, numPartitions: Int): LinkageModel ={
 
       //Save in a variable the matrix of distances and the sparkSession for future uses
@@ -486,6 +513,13 @@ class Linkage(
     (new LinkageModel(spark.sparkContext.parallelize(linkageModel.toSeq), spark.sparkContext.emptyRDD[Vector].collect()))
     }
 
+  /**
+    * Return a Int that represent a point of the model
+    * @param oldDistance    Original Distance
+    * @param clusterReference A Distance with the cluster
+    * @return A Int that represent the next value for the Linkage model. Return the first o the second point that constitution the cluster
+    * @example filterMatrix(oldDistnace, clusterReference)
+    */
   def filterMatrix(oldDistance: Distance, clusterReference: Distance): Int = {
     var result = 0
 
@@ -498,6 +532,15 @@ class Linkage(
     result
   }
 
+  /**
+    * Return a Int that represent a point of the model
+    * @param idW1    First coordinate
+    * @param idW2 Second coordinate
+    * @param pointReference1 First coordinate of the cluster
+    * @param pointReference2 Second coordinate of the cluster
+    * @return A Int that represent the next value for the Linkage model. Return the first o the second point that constitution the cluster
+    * @example filterDF(1, 2, 10, 11)
+    */
   def filterDF(idW1: Int, idW2: Int, pointReference1: Int, pointReference2: Int): Int = {
     var result = idW1
 

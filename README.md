@@ -5,10 +5,13 @@ This package contains the code for executing four clustering validity indices in
 Please, cite as: Luna-Romera, J.M., García-Gutiérrez, J., Martínez-Ballesteros, M. et al. Prog Artif Intell (2017). https://doi.org/10.1007/s13748-017-0135-3 (https://link.springer.com/article/10.1007%2Fs13748-017-0135-3)
 
 ## Getting Started
-The package includes the following Scala files:
-* ClusterIndex: Scala Object that contains the methods that return the values of the indices.
-* MainTestKMeans: Scala main class ready to test the validity indices using [KMeans method from Mllib](https://spark.apache.org/docs/1.6.2/mllib-clustering.html#k-means).
-* MainTestBKM: Scala main class ready to test the validity indices using [Bisecting KMeans method from Mllib](https://spark.apache.org/docs/1.6.2/mllib-clustering.html#bisecting-k-means).
+The package includes the following Scala files in two packages:
+* *es.us.spark.mllib.clustering.indices*: this package contains the main classes to launch the clustering validity indices.
+  * ClusterIndex: Scala Object that contains the methods that return the values of the indices.
+  * MainTestKMeans: Scala main class ready to test the validity indices using [KMeans method from Mllib](https://spark.apache.org/docs/1.6.2/mllib-clustering.html#k-means).
+  * MainTestBKM: Scala main class ready to test the validity indices using [Bisecting KMeans method from Mllib](https://spark.apache.org/docs/1.6.2/mllib-clustering.html#bisecting-k-means).
+  * MainTestLinkage: Scala main class ready to test the validity indices using Linkage Hierarchical Clustering.
+* *es.us.spark.linkage*: Package that contains the Linkage Method.  
 * Utils: Scala object that includes some helpful methods.
 * C5-D20-I1000.csv: Example dataset that contains 5 clusters with 1000 points each and 20 features (columns).
 

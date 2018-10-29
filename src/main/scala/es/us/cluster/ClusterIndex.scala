@@ -1,8 +1,9 @@
 package es.us.cluster
 
+
 import es.us.linkage.{Distance, Linkage}
 import org.apache.spark.internal.Logging
-import org.apache.spark.mllib.clustering.{BisectingKMeans, KMeans}
+import org.apache.spark.mllib.clustering.{BisectingKMeans, KMeans, KMeansEmpleo}
 import org.apache.spark.mllib.linalg.{Vector, Vectors}
 import org.apache.spark.rdd.RDD
 
@@ -37,7 +38,7 @@ object ClusterIndex extends Logging {
     var s = ""
     val sc = parsedData.sparkContext
 
-    val clusters = KMeans.train(parsedData, numClusters, numIterations, 1, "k-means||", Utils.giveMeTime())
+    val clusters = KMeansEmpleo.train(parsedData, numClusters, numIterations, 1, "k-means||", Utils.giveMeTime())
 
     //Global Center
     val centroides = sc.parallelize(clusters.clusterCenters)

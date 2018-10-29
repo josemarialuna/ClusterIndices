@@ -107,6 +107,4 @@ object MainTestKMeans {
   def dataToDouble(s: String): Double = {
     return if (s.isEmpty) 0 else s.toDouble
   }
-
 }
-

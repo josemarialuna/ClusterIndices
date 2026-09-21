@@ -1,89 +1,146 @@
-# Validity Indices for Clustering Techniques in Big Data
+# ClusterIndices
 
-This package contains the code for executing four clustering validity indices in Spark. The package includes BD-Silhouette BD-Dunn that were proposed in [1]. Davies-Bouldin and WSSSE indices are also calculated in the same method. The cluster indices can be executed using K-means and Bisecting K-Means from Spark MLlib, and Linkage method.
+Clustering validity indices for Apache Spark: **BD-Silhouette**, **BD-Dunn**,
+**Davies-Bouldin**, and **WSSSE**, with K-means, Bisecting K-means, and hierarchical linkage.
 
-Please, cite as: Luna-Romera, J.M., García-Gutiérrez, J., Martínez-Ballesteros, M. et al. Prog Artif Intell (2018) 7: 81. https://doi.org/10.1007/s13748-017-0135-3 (https://link.springer.com/article/10.1007%2Fs13748-017-0135-3)
+Based on [Luna-Romera et al., *An approach to validity indices for clustering techniques in Big Data*](https://doi.org/10.1007/s13748-017-0135-3),
+*Progress in Artificial Intelligence* 7, 81-94 (2018).
 
-## Getting Started
-The package includes the following Scala files in two packages:
-* *es.us.spark.mllib.clustering.indices*: this package contains the main classes to launch the clustering validity indices.
-  * ClusterIndex: Scala Object that contains the methods that return the values of the indices.
-  * MainTestKMeans: Scala main class ready to test the validity indices using [KMeans method from Mllib](https://spark.apache.org/docs/1.6.2/mllib-clustering.html#k-means).
-  * MainTestBKM: Scala main class ready to test the validity indices using [Bisecting KMeans method from Mllib](https://spark.apache.org/docs/1.6.2/mllib-clustering.html#bisecting-k-means).
-  * MainTestLinkage: Scala main class ready to test the validity indices using Linkage Hierarchical Clustering.
-* *es.us.spark.linkage*: Package that contains the Linkage Method.  
-* Utils: Scala object that includes some helpful methods.
-* C5-D20-I1000.csv: Example dataset that contains 5 clusters with 1000 points each and 20 features (columns).
+> The published equations and the original repository implement different conventions.
+> Version 2 makes this distinction explicit: `paper` follows equations 6-10 using
+> Euclidean distance; `legacy` retains the repository's squared-distance, pairwise-center
+> formulas. See [Scientific definitions](docs/SCIENTIFIC_DEFINITIONS.md) before comparing results.
 
-### Prerequisites
+## Requirements and build
 
-The package is ready to be used. You only have to download it and import it into your workspace. The main files include an example dataset that could be used with the main classes.
+- JDK **17** (`JAVA_HOME` must point to that JDK).
+- Spark **3.5.8**, built for Scala **2.12**, for `spark-submit`.
+- Maven **3.6.3+**, or the included Maven wrapper.
 
-## Running the tests
-
-The testing classes have been configured for being executed in a laptop. There are critical variables that must be configured before the execution:
-* path: The complete path where the dataset is located.
-* fileName: The name of the dataset, including the extension.
-* minNumCluster: The initial number of clusters to test.
-* maxNumCluster: The last number of clusters to test.
-* numIterations: The number of iterations of the clustering method.
-* numPartitions: The number of partitions for the dataset. 3 x number of cores (Recommended).
-
-
-```
-val conf = new SparkConf()
-      .setAppName("Spark Cluster")
-      .setMaster("local[*]")
-
-    Logger.getLogger("org").setLevel(Level.OFF)
-    Logger.getLogger("akka").setLevel(Level.OFF)
-
-    val sc = new SparkContext(conf)
-
-    var path = ""
-    var fileName = "C5-D20-I1000.csv"
-
-    var origen: String = path + fileName
-    var destino: String = path + fileName
-    var minNumCluster = 2
-    var maxNumCluster = 10
-    var numIterations = 100
-    var numPartitions = 16
+```sh
+./mvnw verify
+# Windows PowerShell:
+.\mvnw.cmd verify
 ```
 
+The build compiles Scala, runs numerical and local Spark tests, and creates
+`target/clusterIndices-2.0.0-SNAPSHOT.jar`. Spark and Scala are provided by the
+Spark distribution; they are deliberately not bundled into the JAR.
+Tests start Spark on `local[2]`; Linux is the reference CI environment.
+On Windows, Hadoop filesystem operations may require a compatible native Hadoop setup;
+WSL is an alternative. Do not use arbitrary third-party Hadoop executables.
+
+## Quick start
+
+The included `C5-D20-I1000.csv` has 5,000 rows and 20 numeric features, without a header.
+The dataset description specifies five generated clusters; class labels are not included.
+
+```sh
+spark-submit --class es.us.cluster.Main --master 'local[2]' \
+  target/clusterIndices-2.0.0-SNAPSHOT.jar \
+  --input C5-D20-I1000.csv --output results/kmeans-paper \
+  --algorithm kmeans --min-k 2 --max-k 10 --seed 42 --definition paper
+```
+
+Use `--algorithm bkm` for Bisecting K-means. The output directory must not exist;
+existing results are never overwritten. `--help` lists the options without starting Spark.
+Spark deployment options, such as `--master`, normally precede the JAR. The application
+also accepts an explicit `--master` override after the JAR; otherwise it respects
+Spark's configuration and falls back to `local[*]` only when no master is configured.
+
+### Input contract
+
+Input is a simple comma-separated numeric matrix. Quoted fields, embedded commas,
+missing values, NaN, infinity, empty rows, and inconsistent dimensions are unsupported.
+Errors identify the row/column where possible. All retained columns are features;
+there is **no automatic scaling**, imputation, or label detection.
+
+For a single input file containing a header, an ID column, and a class column:
+
+```sh
+# Append these application options to the command above:
+--header true --drop-columns 0,4
+```
+
+Column positions are zero-based. `--header true` skips the first line of the whole input,
+not one header per file in a directory. Remove per-file headers before loading a directory.
+
+### Hierarchical linkage
+
+```sh
+spark-submit --class es.us.cluster.Main --master 'local[2]' \
+  target/clusterIndices-2.0.0-SNAPSHOT.jar \
+  --input small-data.csv --output results/linkage \
+  --algorithm linkage --linkage avg --min-k 2 --max-k 8 \
+  --checkpoint checkpoints --max-linkage-points 2000
+```
+
+Linkage creates all `n*(n-1)/2` point distances. It is intended for small datasets;
+Spark does not remove its quadratic storage cost. The default 2,000-point guard can
+be raised deliberately with `--max-linkage-points`. On a distributed cluster,
+`--checkpoint` must be a shared filesystem URI accessible to executors.
+
+Strategies: `min` (single linkage), `max` (complete linkage), and `avg` (**WPGMA**,
+equal weights for the two merged clusters, not size-weighted UPGMA).
+Linkage distances retain the original `Float` representation. The merge history is
+built once, then cut for each requested k. Evaluation uses those actual memberships.
 
 ## Results
 
-By default, results are saved in the same a folder than the dataset. Results are in a folder named "DatasetName-Results-DATE" that contains a part-00000 file. The result follow the next scheme: k, Silhouette value, Dunn value, Davies-Bouldin value, WSSSE value, and the elapsed time of each index in miliseconds. 
+The output directory contains `part-00000` (TSV with a header), Spark's success marker,
+and `_metadata.properties` recording input, versions, dimensions and experiment settings.
+Columns are:
 
-In the case of our example dataset, a resultset could be:
-```
-2	0.6471984147958033	1.4964051343742035	0.6763338700755929	2836.5005986600886	196	157	1320	37
-3	0.8173370699126433	2.399960823246771	0.4211436895566971	1755.6134378311212	122	49	1151	19
-4	0.9011755677244645	2.247008539431008	0.2411105359423219	1001.6859042415279	88	61	1509	96
-5	0.9004432069362583	0.012259186190588283	4.77638577359007	1000.1940093333519	141	51	1130	26
-6	0.9754617811192272	0.06555472765131234	4.0135282309791585	246.33957814603738	69	28	1611	17
-7	0.9756903365854314	0.06648407621169158	6.719173651809519	244.2847443226342	46	27	1185	25
-8	0.9762670314987698	0.060601075379292504	6.6212375576322655	242.99914863497614	44	57	1020	14
-9	0.9765291299881667	0.06134099486219169	8.650483438885638	241.06630939753563	59	30	1217	17
-10	0.9765599524466926	0.06717560818211275	7.8725321621080315	239.42370066181508	80	42	1428	18
+```text
+algorithm definition seed k bd_silhouette bd_dunn davies_bouldin wssse
+statistics_ms silhouette_ms dunn_ms davies_bouldin_ms wssse_ms
 ```
 
-This data could be copy-pasted directly into an spreadsheet to be visualized.
+The first four identify the experiment. Four scores follow, then shared aggregation
+and individual formula timings in milliseconds. Training, parsing, linkage construction,
+and centroid construction are excluded. Shared statistics are computed once; the
+formula-only times can be zero. These timings are not comparable to the original
+implementation's repeated Spark jobs. The seed applies to K-means/BKM; linkage is deterministic
+for a fixed ordered input. Floating-point reductions can vary slightly with partitioning.
 
-For the example dataset:
-![Results in an Excel Spreadsheet](https://github.com/josemarialuna/ClusterIndices/blob/master/result_data.PNG)
+Undefined metrics are written as `NaN`, not a misleading zero (see the scientific definitions).
+The program reports scores across k; it does **not** automatically choose an optimum or
+promise reproduction of the paper's experimental tables.
 
-![Graphs results for example dataset](https://github.com/josemarialuna/ClusterIndices/blob/master/result_graph.PNG)
+## Library API
 
-## Contributors
+```scala
+import es.us.cluster.{ClusterIndex, IndexDefinition, ValidityIndices}
 
-* José María Luna-Romera - (main contributor and maintainer).
-* Jorge García-Gutiérrez
-* María Martínez-Ballesteros
-* José C. Riquelme Santos
+// data: RDD[org.apache.spark.mllib.linalg.Vector]
+val result = ClusterIndex.evaluateKMeans(data, k = 5, iterations = 100,
+  seed = 42L, definition = IndexDefinition.Paper)
+println(result.bdSilhouette)
 
-## References
+// Evaluate an existing partition without retraining:
+// assignments: RDD[(Int, Vector)], labels index the centers array (0..k-1)
+val scores = ValidityIndices.evaluate(assignments, centers, IndexDefinition.Paper)
+```
 
-[1] Luna-Romera, J.M., García-Gutiérrez, J., Martínez-Ballesteros, M. et al. Prog Artif Intell (2018) 7: 81. https://doi.org/10.1007/s13748-017-0135-3
+Every center must have at least one assigned point. The direct evaluator accepts one
+cluster; training experiments require k >= 2. Cache input reused across experiments
+and release it when finished. The evaluator does not cache or unpersist caller-owned RDDs.
 
+## Project guide
+
+- [Architecture](docs/ARCHITECTURE.md)
+- [Scientific definitions and numerical conventions](docs/SCIENTIFIC_DEFINITIONS.md)
+- [Migration from the original repository](docs/MIGRATION.md)
+- [Contributing and testing](CONTRIBUTING.md)
+- [Changes](CHANGELOG.md)
+
+The `MainTestKMeans` and `MainTestBKM` launchers retain zero/six-argument entry points
+and legacy formulas, but write the new self-describing TSV schema. New code should use `Main`.
+
+## Citation and license
+
+Use the publication DOI above when citing the scientific method. Machine-readable citation
+metadata is in [CITATION.cff](CITATION.cff). The source is licensed under [Apache-2.0](LICENSE).
+Original contributors: José María Luna-Romera, Jorge García-Gutiérrez,
+Maria Martínez-Ballesteros, and José C. Riquelme Santos; linkage code also credits
+José David Martín. Publication authorship is preserved separately from software changes.

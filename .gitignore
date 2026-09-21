@@ -1,0 +1,11 @@
+target/
+.tools/
+.idea/
+*.iml
+.bsp/
+.metals/
+checkpoints/
+*-Results-*/
+spark-warehouse/
+derby.log
+.DS_Store

@@ -1,0 +1,27 @@
+cff-version: 1.2.0
+message: "Please cite the research article when using the published indices."
+title: "ClusterIndices"
+type: software
+license: Apache-2.0
+repository-code: "https://github.com/josemarialuna/ClusterIndices"
+authors:
+  - family-names: "Luna-Romera"
+    given-names: "José María"
+preferred-citation:
+  type: article
+  title: "An approach to validity indices for clustering techniques in Big Data"
+  authors:
+    - family-names: "Luna-Romera"
+      given-names: "José María"
+    - family-names: "García-Gutiérrez"
+      given-names: "Jorge"
+    - family-names: "Martínez-Ballesteros"
+      given-names: "Maria"
+    - family-names: "Riquelme Santos"
+      given-names: "José C."
+  journal: "Progress in Artificial Intelligence"
+  year: 2018
+  volume: 7
+  start: 81
+  end: 94
+  doi: "10.1007/s13748-017-0135-3"

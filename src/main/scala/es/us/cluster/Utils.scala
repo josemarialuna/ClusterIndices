@@ -1,55 +1,24 @@
 package es.us.cluster
 
-import java.io.PrintWriter
-import java.text.SimpleDateFormat
-import java.util.Calendar
-
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import org.apache.spark.rdd.RDD
 
-/**
-  *
-  * @author José María Luna
-  * @version 1.0
-  * @since v1.0 Dev
-  */
+/** Utilities retained for source compatibility. Original author: José María Luna. */
 object Utils {
+  def whatTimeIsIt(): String = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmssSSS"))
+  def whatDayIsIt(): String = LocalDateTime.now().format(DateTimeFormatter.BASIC_ISO_DATE)
+  def giveMeTime(): Long = System.currentTimeMillis()
+  def dataToDouble(s: String): Double = if (s.isEmpty) 0.0 else s.toDouble
 
-  def whatTimeIsIt(): String = {
-    return new SimpleDateFormat("yyyyMMddhhmm").format(Calendar.getInstance().getTime())
+  def calculateMedian(values: List[Double]): Double = {
+    require(values.nonEmpty, "Cannot calculate the median of an empty list")
+    val sorted = values.sorted
+    val middle = sorted.length / 2
+    if (sorted.length % 2 == 0) sorted(middle - 1) / 2 + sorted(middle) / 2 else sorted(middle)
   }
 
-  def whatDayIsIt(): String = {
-    return new SimpleDateFormat("yyyyMMdd").format(Calendar.getInstance().getTime())
-  }
-
-  def giveMeTime(): Long = {
-    return Calendar.getInstance().getTime().getTime
-  }
-
-  //Return 0 if the data is empty, else return data parsed to Double
-  def dataToDouble(s: String): Double = {
-    return if (s.isEmpty) 0 else s.toDouble
-  }
-
-  def calculateMedian(listado: List[Double]): Double = {
-
-    val count = listado.length
-
-    val median: Double = if (count % 2 == 0) {
-      val l = count / 2 - 1
-      val r = l + 1
-      (listado.apply(l) + listado.apply(r)) / 2
-    } else listado.apply(count / 2)
-
-    return median
-
-  }
-
-  def printRDD(dataRDD: RDD[Unit], nameFile: String): Unit = {
-    new PrintWriter(nameFile) {
-      dataRDD.foreach(println)
-      close
-    }
-  }
-
+  @deprecated("Use RDD[String].saveAsTextFile directly", "2.0.0")
+  def printRDD(dataRDD: RDD[Unit], nameFile: String): Unit =
+    dataRDD.map(_.toString).saveAsTextFile(nameFile)
 }
